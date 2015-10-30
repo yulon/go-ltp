@@ -11,7 +11,6 @@ import "C"
 
 import (
 	"encoding/json"
-	"strings"
 	"unsafe"
 )
 
@@ -31,13 +30,16 @@ const (
 	FlagAll = C.JSONLTP_FLAG_ALL
 )
 
-var spstr = strings.Repeat(" ", 32768)
-
 func Analyze(line string, flag C.int) (r *Result) {
-	buf := C.jsonltp_analyze(C.CString(line), flag)
+	cLine := C.CString(line)
+	cJson := C.jsonltp_analyze(cLine, flag)
+	C.free(unsafe.Pointer(cLine))
+
+	j := []byte(C.GoString(cJson))
+	C.free(unsafe.Pointer(cJson))
+
 	r = &Result{}
-	json.Unmarshal([]byte(C.GoString(buf)), r)
-	C.free(unsafe.Pointer(buf))
+	json.Unmarshal(j, r)
 	return
 }
 
