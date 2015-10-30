@@ -5,20 +5,22 @@ package ltp
 #cgo LDFLAGS: -ljsonltp
 
 #include "jsonltp.h"
+#include <stdlib.h>
 */
 import "C"
 
 import (
 	"encoding/json"
 	"strings"
+	"unsafe"
 )
 
 func Init(dataDir string) {
 	C.jsonltp_init(C.CString(dataDir))
 }
 
-func Close() {
-	C.jsonltp_close()
+func Release() {
+	C.jsonltp_release()
 }
 
 const (
@@ -29,21 +31,13 @@ const (
 	FlagAll = C.JSONLTP_FLAG_ALL
 )
 
-func DoJson(line string, buf *C.char, flag C.int) int {
-	return int(C.jsonltp(C.CString(line), buf, flag))
-}
-
 var spstr = strings.Repeat(" ", 32768)
 
-func Do(line string, flag C.int) (r *Result) {
-	buf := C.CString(spstr)
-	leng := int(C.jsonltp(C.CString(line), buf, flag))
-	if leng > 32768 {
-		buf = C.CString(strings.Repeat(" ", leng))
-		C.jsonltp(C.CString(line), buf, flag)
-	}
+func Analyze(line string, flag C.int) (r *Result) {
+	buf := C.jsonltp_analyze(C.CString(line), flag)
 	r = &Result{}
 	json.Unmarshal([]byte(C.GoString(buf)), r)
+	C.free(unsafe.Pointer(buf))
 	return
 }
 
