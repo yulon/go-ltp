@@ -10,7 +10,6 @@ package ltp
 import "C"
 
 import (
-	"encoding/json"
 	"unsafe"
 )
 
@@ -30,36 +29,12 @@ const (
 	FlagAll = C.JSONLTP_FLAG_ALL
 )
 
-func Analyze(line string, flag C.int) (r *Result) {
+func AnalyzeJson(line string, flag C.int) (j []byte) {
 	cLine := C.CString(line)
 	cJson := C.jsonltp_analyze(cLine, flag)
 	C.free(unsafe.Pointer(cLine))
 
-	j := []byte(C.GoString(cJson))
+	j = []byte(C.GoString(cJson))
 	C.free(unsafe.Pointer(cJson))
-
-	r = &Result{}
-	json.Unmarshal(j, r)
 	return
-}
-
-type Result struct {
-	Words []string `json:"words"`
-	Tags []string `json:"tags"`
-	Nes []struct {
-		I int `json:"i"`
-		Ne string `json:"ne"`
-	} `json:"nes"`
-	Parse []struct {
-		Parent int `json:"parent"`
-		Deprel string `json:"deprel"`
-	} `json:"parse"`
-	Srl []struct {
-		I int `json:"i"`
-		Args []struct {
-			Type string `json:"type"`
-			Beg int `json:"beg"`
-			End int `json:"end"`
-		} `json:"args"`
-	} `json:"srl"`
 }
